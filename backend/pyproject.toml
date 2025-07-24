@@ -1,0 +1,15 @@
+[project]
+name = "ecovision-climate-visualizer-backend"
+version = "0.1.0"
+description = "Default template for PDM package"
+authors = [
+    {name = "Sean Raven", email = "sravendragon0@hotmail.com"},
+]
+dependencies = []
+requires-python = "==3.13.*"
+readme = "README.md"
+license = {text = "All Rights Reserved"}
+
+
+[tool.pdm]
+distribution = false
