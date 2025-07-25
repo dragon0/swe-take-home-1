@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import os
 
 from .server.v1 import router as v1_router
+from .dal.helpers import get_engine, create_tables
 
 app = FastAPI(title="EcoVision API")
 
@@ -19,6 +20,9 @@ app.add_middleware(
 @app.on_event("startup")
 async def startup():
     load_dotenv()
+    db_url = os.environ.get("DB_URL", "sqlite:///database.db")
+    engine = get_engine(db_url)
+    create_tables(engine)
     pass
 
 @app.on_event("shutdown")
