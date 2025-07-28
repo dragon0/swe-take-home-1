@@ -3,12 +3,11 @@
 from fastapi import APIRouter, Query
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Optional, Dict, List, Any
-#import databases
-import os
+from pydantic import BaseModel
 
-# Database connection
-DATABASE_URL = f"mysql://{os.environ.get('MYSQL_USER', 'root')}:{os.environ.get('MYSQL_PASSWORD', '')}@{os.environ.get('MYSQL_HOST', 'localhost')}/{os.environ.get('MYSQL_DB', 'climate_data')}"
-#database = databases.Database(DATABASE_URL)
+from .db import SessionDep
+from ..dal.models import Location, Metric, ClimateData
+from ..dal.queries import get_all_climate_data, get_all_locations, get_all_metrics
 
 router = APIRouter()
 
@@ -20,48 +19,126 @@ QUALITY_WEIGHTS = {
     'poor': 0.3
 }
 
+class ClimateResponseData(BaseModel):
+    id: int
+    location_id: int
+    location_name: str
+    latitude: float
+    longitude: float
+    date: str
+    metric: str
+    value: float
+    unit: str
+    quality: str
+
+class ClimateResponseMeta(BaseModel):
+    total_count: int
+    page: int
+    per_page: int
+
+class ClimateResponse(BaseModel):
+    data: list[ClimateResponseData]
+    meta: ClimateResponseMeta
+
+
 @router.get('/climate')
-async def get_climate_data():
+async def get_climate_data(session: SessionDep) -> ClimateResponse:
     """
     Retrieve climate data with optional filtering.
     Query parameters: location_id, start_date, end_date, metric, quality_threshold
-    
+
     Returns climate data in the format specified in the API docs.
     """
     # TODO: Implement this endpoint
     # 1. Get query parameters from request.args
     # 2. Validate quality_threshold if provided
     # 3. Build and execute SQL query with proper JOINs and filtering
+    climate_data = get_all_climate_data(session)
+
     # 4. Apply quality threshold filtering
+
     # 5. Format response according to API specification
-    
-    return {"data": [], "meta": {"total_count": 0, "page": 1, "per_page": 50}}
+    climate_data = [ClimateResponseData(
+        id=data.id,
+        location_id=data.location_id,
+        location_name=data.location.name,
+        latitude=data.location.latitude,
+        longitude=data.location.longitude,
+        date=data.date.isoformat(),
+        metric=data.metric.name,
+        value=data.value,
+        unit=data.metric.unit,
+        quality=data.quality.name
+        ) for data in climate_data]
+    # TODO Pagination not implemented yet
+    climate_meta = ClimateResponseMeta(total_count=len(climate_data), page=1, per_page=50)
+
+
+    return ClimateResponse(data=climate_data, meta=climate_meta)
+
+class LocationResponseData(BaseModel):
+    id: int
+    name: str
+    country: str
+    latitude: float
+    longitude: float
+
+class LocationResponse(BaseModel):
+    data: list[LocationResponseData]
 
 @router.get('/locations')
-async def get_locations():
+async def get_locations(session: SessionDep) -> LocationResponse:
     """
     Retrieve all available locations.
-    
+
     Returns location data in the format specified in the API docs.
     """
     # TODO: Implement this endpoint
     # 1. Query the locations table
+    locations = get_all_locations(session)
+
     # 2. Format response according to API specification
-    
-    return {"data": []}
+    locations = [LocationResponseData(
+        id=data.id,
+        name=data.name,
+        country=data.country,
+        latitude=data.latitude,
+        longitude=data.longitude,
+        ) for data in locations]
+
+    return LocationResponse(data=locations)
+
+class MetricResponseData(BaseModel):
+    id: int
+    name: str
+    display_name: str
+    unit: str
+    description: str
+
+class MetricResponse(BaseModel):
+    data: list[MetricResponseData]
 
 @router.get('/metrics')
-async def get_metrics():
+async def get_metrics(session: SessionDep) -> MetricResponse:
     """
     Retrieve all available climate metrics.
-    
+
     Returns metric data in the format specified in the API docs.
     """
     # TODO: Implement this endpoint
     # 1. Query the metrics table
+    metrics = get_all_metrics(session)
     # 2. Format response according to API specification
-    
-    return {"data": []}
+    metrics = [MetricResponseData(
+        id=data.id,
+        name=data.name,
+        display_name=data.display_name,
+        unit=data.unit,
+        description=data.description
+        ) for data in metrics]
+
+
+    return MetricResponse(data=metrics)
 
 @router.get('/summary')
 async def get_summary():
