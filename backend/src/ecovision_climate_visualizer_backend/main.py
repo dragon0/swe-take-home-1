@@ -5,6 +5,7 @@ import os
 
 from .server.v1 import router as v1_router
 from .dal.helpers import get_engine, create_tables
+from .seed import seed
 
 app = FastAPI(title="EcoVision API")
 
@@ -23,7 +24,11 @@ async def startup():
     db_url = os.environ.get("DB_URL", "sqlite:///database.db")
     engine = get_engine(db_url)
     create_tables(engine)
-    pass
+
+    should_db_seed = os.environ.get("DB_SEED")
+    if should_db_seed:
+        seed(engine, '../data/sample_data.json')
+        
 
 @app.on_event("shutdown")
 async def shutdown():
