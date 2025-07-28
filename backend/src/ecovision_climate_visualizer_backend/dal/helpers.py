@@ -5,6 +5,9 @@ from sqlalchemy.engine import Engine
 
 from .models import Base
 
+def get_db_url():
+    return os.environ.get("DB_URL", "sqlite:///database.db")
+
 def get_engine(db_url:str):
     connect_args = {"check_same_thread": False}
     engine = create_engine(db_url, connect_args=connect_args)
