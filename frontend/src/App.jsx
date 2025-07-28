@@ -3,6 +3,11 @@ import Filters from './components/Filters';
 import ChartContainer from './components/ChartContainer';
 import TrendAnalysis from './components/TrendAnalysis';
 import QualityIndicator from './components/QualityIndicator';
+import {
+  getClimateData,
+  getLocations,
+  getMetrics,
+} from "./api";
 
 function App() {
   const [locations, setLocations] = useState([]);
@@ -20,6 +25,48 @@ function App() {
   const [loading, setLoading] = useState(false);
 
   // Existing useEffect for locations and metrics
+
+  useEffect(() => {
+    const initData = async () => {
+      setLoading(true);
+      try {
+        const [climateResponse, locationsResponse, metricsResponse] =
+          await Promise.allSettled([
+            getClimateData(),
+            getLocations(),
+            getMetrics(),
+          ]);
+
+        if (climateResponse.status === "fulfilled") {
+          setClimateData(climateResponse.value.data);
+        } else {
+          console.error(
+            `Fetching climate data failed: ${climateResponse.reason}`,
+          );
+        }
+        if (locationsResponse.status === "fulfilled") {
+          setLocations(locationsResponse.value.data);
+        } else {
+          console.error(
+            `Fetching locations failed: ${locationsResponse.reason}`,
+          );
+        }
+        if (metricsResponse.status === "fulfilled") {
+          setMetrics(metricsResponse.value.data);
+        } else {
+          console.error(`Fetching metrics failed: ${metricsResponse.reason}`);
+        }
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initData();
+
+    return () => {};
+  }, []);
 
   // Updated fetch function to handle different analysis types
   const fetchData = async () => {
