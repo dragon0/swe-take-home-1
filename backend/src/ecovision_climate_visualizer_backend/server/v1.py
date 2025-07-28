@@ -1,13 +1,14 @@
 # app.py - EcoVision: Climate Visualizer API
 
+import datetime as dt
 from fastapi import APIRouter, Query
 from fastapi.middleware.cors import CORSMiddleware
-from typing import Optional, Dict, List, Any
+from typing import Optional, Dict, List, Any, Annotated, Literal
 from pydantic import BaseModel
 
 from .db import SessionDep
 from ..dal.models import Location, Metric, ClimateData
-from ..dal.queries import get_all_climate_data, get_all_locations, get_all_metrics
+from ..dal.queries import get_filtered_climate_data, get_all_locations, get_all_metrics
 
 router = APIRouter()
 
@@ -18,6 +19,14 @@ QUALITY_WEIGHTS = {
     'questionable': 0.5,
     'poor': 0.3
 }
+
+class FilterParams(BaseModel):
+    location_id: int | None = None
+    start_date : dt.date | None = None
+    end_date : dt.date | None = None
+    metric : str | None = None
+    quality_threshold: Literal["poor", "questionable", "good", "excellent"] | None = None
+
 
 class ClimateResponseData(BaseModel):
     id: int
@@ -42,7 +51,7 @@ class ClimateResponse(BaseModel):
 
 
 @router.get('/climate')
-async def get_climate_data(session: SessionDep) -> ClimateResponse:
+async def get_climate_data(filter: Annotated[FilterParams, Query()], session: SessionDep) -> ClimateResponse:
     """
     Retrieve climate data with optional filtering.
     Query parameters: location_id, start_date, end_date, metric, quality_threshold
@@ -53,7 +62,13 @@ async def get_climate_data(session: SessionDep) -> ClimateResponse:
     # 1. Get query parameters from request.args
     # 2. Validate quality_threshold if provided
     # 3. Build and execute SQL query with proper JOINs and filtering
-    climate_data = get_all_climate_data(session)
+    climate_data = get_filtered_climate_data(
+            session,
+            location_id=filter.location_id,
+            start_date=filter.start_date,
+            end_date=filter.end_date,
+            metric=filter.metric,
+            quality_threshold=filter.quality_threshold)
 
     # 4. Apply quality threshold filtering
 
