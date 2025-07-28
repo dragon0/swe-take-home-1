@@ -81,9 +81,57 @@ export const getMetrics = async () => {
  */
 export const getClimateSummary = async (filters = {}) => {
   try {
-    // TODO: Implement API call with filters
+    let endpoint = `${API_BASE_URL}/summary`;
+
+    // TODO: Implement filters
+    const queryParams = new URLSearchParams({
+      ...(filters.locationId && { location_id: filters.locationId }),
+      ...(filters.startDate && { start_date: filters.startDate }),
+      ...(filters.endDate && { end_date: filters.endDate }),
+      ...(filters.metric && { metric: filters.metric }),
+      ...(filters.qualityThreshold && {
+        quality_threshold: filters.qualityThreshold,
+      }),
+    });
+
+    console.log(`fetching ${endpoint}`);
+    const response = await fetch(`${endpoint}?${queryParams}`);
+    const data = await response.json();
+
+    return data;
   } catch (error) {
     console.error('API Error:', error);
+    throw error;
+  }
+};
+
+/**
+ * Fetch climate trend statistics with optional filters
+ * @param {Object} filters - Filter parameters
+ * @returns {Promise} - API response
+ */
+export const getClimateTrends = async (filters = {}) => {
+  try {
+    let endpoint = `${API_BASE_URL}/trends`;
+
+    // TODO: Implement filters
+    const queryParams = new URLSearchParams({
+      ...(filters.locationId && { location_id: filters.locationId }),
+      ...(filters.startDate && { start_date: filters.startDate }),
+      ...(filters.endDate && { end_date: filters.endDate }),
+      ...(filters.metric && { metric: filters.metric }),
+      ...(filters.qualityThreshold && {
+        quality_threshold: filters.qualityThreshold,
+      }),
+    });
+
+    console.log(`fetching ${endpoint}`);
+    const response = await fetch(`${endpoint}?${queryParams}`);
+    const data = await response.json();
+
+    return data;
+  } catch (error) {
+    console.error("API Error:", error);
     throw error;
   }
 };

@@ -7,6 +7,8 @@ import {
   getClimateData,
   getLocations,
   getMetrics,
+  getClimateSummary,
+  getClimateTrends,
 } from "./api";
 
 function App() {
@@ -72,25 +74,16 @@ function App() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const queryParams = new URLSearchParams({
-        ...(filters.locationId && { location_id: filters.locationId }),
-        ...(filters.startDate && { start_date: filters.startDate }),
-        ...(filters.endDate && { end_date: filters.endDate }),
-        ...(filters.metric && { metric: filters.metric }),
-        ...(filters.qualityThreshold && { quality_threshold: filters.qualityThreshold })
-      });
-
-      let endpoint = '/api/v1/climate';
-      if (filters.analysisType === 'trends') {
-        endpoint = '/api/v1/trends';
-      } else if (filters.analysisType === 'weighted') {
-        endpoint = '/api/v1/summary';
+      let endpoint = getClimateData;
+      if (filters.analysisType === "trends") {
+        endpoint = getClimateTrends;
+      } else if (filters.analysisType === "weighted") {
+        endpoint = getClimateSummary;
       }
 
-      const response = await fetch(`${endpoint}?${queryParams}`);
-      const data = await response.json();
-      
-      if (filters.analysisType === 'trends') {
+      const data = await endpoint(filters);
+
+      if (filters.analysisType === "trends") {
         setTrendData(data.data);
       } else {
         setClimateData(data.data);
